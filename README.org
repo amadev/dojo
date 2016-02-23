@@ -1,0 +1,44 @@
+#+OPTIONS: ^:nil
+* Inferring Genotype from a Pedigree
+  :PROPERTIES:
+  :exports:  both
+  :eval: never-export
+  :END:
+
+Проверить можно в интерактивном режиме.
+Можно посмотреть граф дерева и расчеты вероятностей 
+для узлов (нужет graphviz).
+#+NAME: inp
+#+BEGIN_SRC text
+((((Aa,aa),(Aa,Aa)),((aa,aa),(aa,AA))),Aa);
+#+END_SRC
+
+#+BEGIN_SRC python :noweb yes :results replace
+import io
+from inferring_genotype import (
+    read_newick, tree, 
+    calculate_genotype_probability, graph)
+
+inp = '<<inp>>'
+lst = read_newick(io.StringIO(inp))
+node = tree(lst)
+calculate_genotype_probability(node)
+graph(node, '/tmp/ig_tree.gv')
+return node.prob
+#+END_SRC
+
+#+RESULTS:
+| 0.15625 | 0.5 | 0.34375 |
+
+Или просто запустив тесты, в которых проверяется
+решение примера.
+#+BEGIN_SRC sh
+python3 inferring_genotype.py
+#+END_SRC
+
+#+RESULTS:
+
+Функция cross_probability получилась из картинки.
+
+#+attr_html: :width 1024px
+[[./ig.jpg]]
