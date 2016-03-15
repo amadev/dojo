@@ -1,0 +1,10 @@
+{    "@fields": {        "content_type": "application/json",        "level": "INFO",        "method": "PUT",        "name": "django.http",        "path": "/v1/items/1/",        "status_code": 200,        "uuid": "92c4c7cc-f00c-4c77-bc71-3687d33c225d"    },    "@message1x": "Request processed",    "@source_host": "c57872949172",    "@timestamp": "2015-12-15T05:45:39+00:00"}
+
+
+
+{    "@fields": {        "content_type": "application/json",        "level": "INFO",        "method": "PUT",        "name": "django.http",        "path": "/v1/items/1/",        "status_code": 200,        "uuid": "92c4c7cc-f00c-4c77-bc71-3687d33c225d"    },    "@message": "Request processed",    "@source_host": "c57872949172",    "@timestamp": "2015-12-15T05:45:39+00:00"
+
+
+
+
+{    "@fields": {        "content_type": "application/json",        "level2": "INFO",        "method": "PUT",        "name": "django.http",        "path": "/v1/items/1/",        "status_code": 200,        "uuid": "92c4c7cc-f00c-4c77-bc71-3687d33c225d"    },    "@message": "",    "@source_host": "c57872949172",    "@timestamp": "2015-12-15T05:45:39+00:00"}

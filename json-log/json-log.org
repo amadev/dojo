@@ -1,0 +1,331 @@
+* Разбор лог-файла
+
+** Задание
+Некий сервис пишет в лог строки, каждая из которых является JSON
+словарем примерно такого содержания:
+
+#+NAME: log-text
+#+BEGIN_SRC text
+{
+    "@fields": {
+        "content_type": "application/json",
+        "level": "INFO",
+        "method": "PUT",
+        "name": "django.http",
+        "path": "/v1/items/1/",
+        "status_code": 200,
+        "uuid": "92c4c7cc-f00c-4c77-bc71-3687d33c225d"
+    },
+    "@message": "Request processed",
+    "@source_host": "c57872949172",
+    "@timestamp": "2015-12-15T05:45:39+00:00"
+}
+#+END_SRC
+
+Необходимо написать на Python консольную утилиту, которая будет читать
+из stdin строки такого лога и выводить их в отформатированном виде.
+По-умолчанию формат вывода такой:
+#+NAME: default-format
+#+BEGIN_SRC text
+[@timestamp] @fields.level @message
+#+END_SRC
+
+но нужно сделать так, чтобы формат можно было поменять,
+указав утилите файл с шаблоном. Для шаблонизации можно использовать
+готовый движок вроде jinja2 или mustache.  Кроме того, утилита должна
+позволять фильтровать записи по @level (хорошо будет, если она
+позволит фильтровать по любым полям). Пример использования утилиты в
+консоли, для чтения из лога ошибок "на-лету": tail -f
+/var/log/service.log | json-log --format template.j2 --filter
+@fields.level=ERROR
+
+** Решение
+*** Описание
+Задача по описанию очень простая. Нужно построчно читать из stdin и
+парсить json стандартной библиотекой или, например, mjson, после чего
+проверять на соответствие фильтру и, если необходимо, передавать в
+объект в шаблонный движок.
+
+Выражение фильтра и шаблон следует парсить заранее, до обработки
+строк. Строки могут быть битые, это не должно останавливать процесс,
+ошибки выдаются в stderr и не мешают дальнейшей обработке.
+В каждой строке может быть только один json-объект, также стоит
+предусмотреть ограничение по максимальной длине, чтобы python-объект
+не съел всю память, например.
+
+Для тестирования нужно создать фикстуру:
+#+BEGIN_SRC sh :noweb yes
+tr -d '\n' > log.txt <<- EOF
+<<log-text>>
+EOF
+#+END_SRC
+
+#+RESULTS:
+
+*** Общая часть
+
+**** Основной цикл
+
+Для всех строк пытаемся получить log_obj, если объект проходит фильтр,
+то выводим его с помощью formatter.
+#+NAME: main-function
+#+BEGIN_SRC python :noweb yes
+  def main():
+      for line in skip_empty(sys.stdin):
+          try:
+              log_obj = read_log_obj(line)
+          except ValueError as err:
+              print("can't read line: {}".format(err), file=sys.stderr)
+              continue
+          if log_filter(log_obj):
+              print(formatter(log_obj))
+#+END_SRC
+
+**** Вспомогательные функции
+
+Нужно пропускать пустые строки, это невалидный json,
+а также ускорит работу.
+#+NAME: skip-empty
+#+BEGIN_SRC python
+  def skip_empty(it):
+      for i in it:
+          i = i.strip()
+          if not i:
+              continue
+          yield i
+#+END_SRC
+
+Опции для консольной утилиты.
+#+NAME: parse-options
+#+BEGIN_SRC python
+  def parse_options():
+      parser = argparse.ArgumentParser()
+      parser.add_argument("--format", default='default.j2')
+      parser.add_argument("--filter", default='')
+      return parser.parse_args()
+#+END_SRC
+
+**** Считыватель строк
+Считывание строки из лог файла - парсинг json.
+#+NAME: read-log-obj
+#+BEGIN_SRC python
+  class Log(dict):
+      def context_variables(self):
+          return {k.replace('@', ''): v for k, v in self.items()}
+
+
+  def read_log_obj(line):
+      if len(line) > 1e9:
+          raise ValueError('Line is too long')
+      return Log(**json.loads(line))
+#+END_SRC
+
+#+NAME: main
+#+BEGIN_SRC python :noweb yes
+<<read-log-obj>>
+
+
+<<parse-options>>
+
+
+<<skip-empty>>
+
+
+<<main-function>>
+#+END_SRC
+
+*** Фильтрация логов
+
+Чтобы отфильтровать log-объекты разобранное выражение для фильра
+преобразуется в функцию, которая принимает log_obj, а возвращает
+boolean (проходит объект по фильтру или нет).
+
+В случае если фильтр не парсится, выдается ошибка и работа останавливается.
+Если фильтр пустой, то считаем, что он срабатывает всегда.
+Если при фильтрафии произошла какая-то ошибка, считаем, что фильтр не сработал.
+#+NAME: create-filter
+#+BEGIN_SRC python
+operators = {
+    '=': lambda a, b: a == b,
+    '~': lambda a, b: b in a
+}
+
+
+def create_log_filter(expr):
+    if not expr:
+        return lambda x: True
+
+    def wrapped(log_obj):
+        try:
+            return operators[expr['op']](log_obj.get(expr['field']), expr['value'])
+        except (ValueError, TypeError) as err:
+            print("can't filter: {}".format(err), file=sys.stderr)
+            return False
+    return wrapped
+#+END_SRC
+
+Для получения элементов из log_object нужен особый getter,
+который может получать вложенные элементы и выдавать соответствующие ошибки.
+#+NAME: field-getter
+#+BEGIN_SRC python
+  def getter(self, field):
+      fields = field.split('.')
+      vars = self
+      for f in fields:
+          if f in vars:
+              vars = vars[f]
+          else:
+              raise ValueError(
+                  '"{}" part from "{}" not found'.format(f, field))
+      return vars
+
+
+  Log.get = getter
+#+END_SRC
+
+Для разбора входного выражения из параметра фильтр используется regexp.
+Изначально для поля field заданы достаточно жесткие ограничения, которые можно ослабить.
+В разборе выражений часто обрабатывают пробельные символы отдельно, например,
+в pyparsing это встроенная особенность, но я этого не делал, то есть выражение
+также должно вводиться в достаточно жесткой форме.
+#+NAME: parse-filter
+#+BEGIN_SRC python
+  expr_parser = re.compile(r'(?P<field>^@[a-zA-Z0-9.]+)(?P<op>=|~)(?P<value>.+)')
+
+
+  def parse_filter(expr_str):
+
+      match = expr_parser.match(expr_str)
+      if not match:
+          raise ValueError('Invalid filter expression')
+      return match.groupdict()
+#+END_SRC
+
+
+#+NAME: filter
+#+BEGIN_SRC python :noweb yes
+  <<parse-filter>>
+
+
+  <<create-filter>>
+
+
+  <<field-getter>>
+#+END_SRC
+
+*** Форматирование
+
+При запуске команды нужно считать шаблон и распарсить его.
+Опция формат указывает на имя файла, который ищется сначала
+относительно ~/.json-log, а потом в текущей директории.
+#+NAME: read-template
+#+BEGIN_SRC python
+  def read_template(name):
+      paths = [
+          os.path.join(os.path.expanduser('~/.json-log'), name),
+          os.path.join(os.getcwd(), name),
+          os.path.expanduser(name)]
+      for path in paths:
+          if os.path.exists(path):
+              with open(path) as f:
+                  template = re.sub(
+                      r'(@[a-zA-Z.]+)', r'\1@', f.read())
+                  return Environment(
+                      variable_start_string='@',
+                      variable_end_string='@').from_string(template)
+      raise ValueError(
+          'Template file not found in paths: {}'.format(paths))
+#+END_SRC
+
+#+NAME: formatter-function
+#+BEGIN_SRC python
+  def formatter(log_obj):
+      return template.render(**log_obj.context_variables())
+#+END_SRC
+
+Шаблон по умолчанию указан как:
+"[@timestamp] @fields.level @message".
+Считается, что символ @ в шаблоне - указатель переменной,
+в jinja переменная задается двумя символами: начало и конец,
+чтобы не писать альтернативный парсер, происходит предобработка
+шаблона и @timestamp заменяется на @timestamp@.
+Такое решение решение лучше не применять, а уточнить требования
+к заданию переменных в шаблоне.
+
+#+BEGIN_SRC sh :noweb yes
+echo '<<default-format>>' > default.j2
+#+END_SRC
+
+#+RESULTS:
+
+#+NAME: formatter
+#+BEGIN_SRC python
+<<read-template>>
+
+
+<<formatter-function>>
+#+END_SRC
+
+*** Сборка
+
+Для работы требуется virtualenv.
+#+BEGIN_SRC sh
+virtualenv ~/.ve/json-log --python=python3
+#+END_SRC
+
+#+RESULTS:
+: Already using interpreter /usr/bin/python3
+: Using base prefix '/usr'
+: New python executable in /home/amadev/.ve/json-log/bin/python3
+: Not overwriting existing python script /home/amadev/.ve/json-log/bin/python (you must use /home/amadev/.ve/json-log/bin/python3)
+: Installing setuptools, pip, wheel...done.
+
+Зависимости.
+#+BEGIN_SRC sh
+~/.ve/json-log/bin/pip install jinja2
+#+END_SRC
+
+#+RESULTS:
+
+Общий код.
+#+BEGIN_SRC python :noweb yes :tangle json-log.py
+  #!/usr/bin/env python
+  # AUTO generated source
+  import re
+  import os
+  import sys
+  import json
+  import argparse
+  from jinja2 import Environment
+
+
+  <<formatter>>
+
+
+  <<main>>
+
+
+  <<filter>>
+
+
+  if __name__ == '__main__':
+      try:
+          options = parse_options()
+          template = read_template(options.format)
+          log_filter = create_log_filter(parse_filter(options.filter))
+          main()
+      except Exception as err:
+          print('error: {} ({})'.format(err, type(err)), file=sys.stderr)
+          sys.exit(1)
+#+END_SRC
+
+#+RESULTS:
+
+Запуск smoke-теста.
+#+BEGIN_SRC sh
+cat log.txt | python3 json-log.py --filter '@fields.level=INFO'
+#+END_SRC
+
+#+RESULTS:
+: [2015-12-15T05:45:39+00:00] INFO
+: [2015-12-15T05:45:39+00:00] INFO
