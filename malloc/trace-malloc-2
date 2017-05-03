@@ -1,0 +1,19 @@
+set pagination off
+set breakpoint pending on
+
+b   __GI___libc_malloc
+commands
+py-bt
+continue
+end
+
+b   __GI___libc_realloc
+commands
+py-bt
+continue
+end
+
+info breakpoints
+
+r
+quit

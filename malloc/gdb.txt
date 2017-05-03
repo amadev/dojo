@@ -1,0 +1,86 @@
+Function "__GI___libc_malloc" not defined.
+Breakpoint 1 (__GI___libc_malloc) pending.
+Function "__GI___libc_realloc" not defined.
+Breakpoint 2 (__GI___libc_realloc) pending.
+Num     Type           Disp Enb Address    What
+1       breakpoint     keep y   <PENDING>  __GI___libc_malloc
+        bt
+        continue
+2       breakpoint     keep y   <PENDING>  __GI___libc_realloc
+        bt
+        continue
+
+Breakpoint 1, __GI___libc_malloc (bytes=20) at malloc.c:2900
+2900	malloc.c: No such file or directory.
+#0  __GI___libc_malloc (bytes=20) at malloc.c:2900
+#1  0x0000000000400646 in init (arr=0x7fffffffe7a0, initial_size=5) at array.c:12
+#2  0x0000000000400767 in main () at array.c:34
+
+Breakpoint 2, __GI___libc_realloc (oldmem=0x602010, bytes=40) at malloc.c:2972
+2972	in malloc.c
+#0  __GI___libc_realloc (oldmem=0x602010, bytes=40) at malloc.c:2972
+#1  0x00000000004006c5 in insert (arr=0x7fffffffe7a0, value=6) at array.c:20
+#2  0x0000000000400781 in main () at array.c:36
+
+Breakpoint 2, realloc_hook_ini (ptr=0x602010, sz=40, caller=0x4006c5 <insert+90>) at hooks.c:41
+41	hooks.c: No such file or directory.
+#0  realloc_hook_ini (ptr=0x602010, sz=40, caller=0x4006c5 <insert+90>) at hooks.c:41
+#1  0x00007ffff7a91d3f in __GI___libc_realloc (oldmem=0x602010, bytes=40) at malloc.c:2981
+#2  0x00000000004006c5 in insert (arr=0x7fffffffe7a0, value=6) at array.c:20
+#3  0x0000000000400781 in main () at array.c:36
+[Inferior 1 (process 19221) exited normally]
+trace-malloc-1:5: Error in sourced command file:
+a.out: No such file or directory.
+quit
+trace-malloc-1:5: Error in sourced command file:
+a.out: No such file or directory.
+quit
+trace-malloc-1:5: Error in sourced command file:
+a.out: No such file or directory.
+Starting program:  --args array.py
+No executable file specified.
+Use the "file" or "exec-file" command.
+quit
+trace-malloc-1:5: Error in sourced command file:
+a.out: No such file or directory.
+Starting program:  
+No executable file specified.
+Use the "file" or "exec-file" command.
+quit
+trace-malloc-1:5: Error in sourced command file:
+a.out: No such file or directory.
+quit
+trace-malloc-1:5: Error in sourced command file:
+a.out: No such file or directory.
+quit
+Function "__GI___libc_malloc" not defined.
+Breakpoint 1 (__GI___libc_malloc) pending.
+Function "__GI___libc_realloc" not defined.
+Breakpoint 2 (__GI___libc_realloc) pending.
+Num     Type           Disp Enb Address    What
+1       breakpoint     keep y   <PENDING>  __GI___libc_malloc
+        bt
+        continue
+2       breakpoint     keep y   <PENDING>  __GI___libc_realloc
+        bt
+        continue
+
+Breakpoint 1, __GI___libc_malloc (bytes=20) at malloc.c:2900
+2900	malloc.c: No such file or directory.
+#0  __GI___libc_malloc (bytes=20) at malloc.c:2900
+#1  0x0000000000400646 in init (arr=0x7fffffffe740, initial_size=5) at array.c:12
+#2  0x0000000000400767 in main () at array.c:34
+
+Breakpoint 2, __GI___libc_realloc (oldmem=0x602010, bytes=40) at malloc.c:2972
+2972	in malloc.c
+#0  __GI___libc_realloc (oldmem=0x602010, bytes=40) at malloc.c:2972
+#1  0x00000000004006c5 in insert (arr=0x7fffffffe740, value=6) at array.c:20
+#2  0x0000000000400781 in main () at array.c:36
+
+Breakpoint 2, realloc_hook_ini (ptr=0x602010, sz=40, caller=0x4006c5 <insert+90>) at hooks.c:41
+41	hooks.c: No such file or directory.
+#0  realloc_hook_ini (ptr=0x602010, sz=40, caller=0x4006c5 <insert+90>) at hooks.c:41
+#1  0x00007ffff7a91d3f in __GI___libc_realloc (oldmem=0x602010, bytes=40) at malloc.c:2981
+#2  0x00000000004006c5 in insert (arr=0x7fffffffe740, value=6) at array.c:20
+#3  0x0000000000400781 in main () at array.c:36
+[Inferior 1 (process 28750) exited normally]
