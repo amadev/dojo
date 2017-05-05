@@ -38,53 +38,42 @@ import itertools
 
 
 def match_pool(pool, request):
-    for i, v in enumerate(pool):
-        if request[i] is None:
+    for k in request:
+        if pool.get(k, None) is None:
             continue
-        if request[i] != v:
+        if request[k] != pool[k]:
             return False
     return True
 
 
 def check_unique_tags(lst):
-    n = len(lst[0])
-    s = [set() for i in range(n)]
+    s = {k: set() for k in lst[0]}
     for item in lst:
-        for i in range(n):
-            if item[i] in s[i]:
+        for k in item:
+            if item[k] in s[k]:
                 return False
-        for i in range(n):
-            s[i].add(item[i])
+        for k in item:
+            s[k].add(item[k])
     return True
 
 
-def filter_tags(p):
-    return p[0:2]
+def filter_tags(pool, unique_tags):
+    return {t: pool[t] for t in pool if t in unique_tags}
 
 
-def main(pools, requests):
+def pick(pools, requests, unique_tags):
     marked_pools = []
     for p in pools:
-        for i in range(1, len(requests) + 1):
-            if match_pool(p, requests[i - 1]):
-                p = filter_tags(p)
-                p.append('r%s' % i)
+        for i in range(len(requests) ):
+            if match_pool(p, requests[i]):
+                p = filter_tags(p, unique_tags)
+                p['request'] = i
                 marked_pools.append(p)
-    for p in itertools.combinations(marked_pools, len(requests)):
-        if check_unique_tags(p):
-            return p
+    for pools_list in itertools.combinations(marked_pools, len(requests)):
+        if check_unique_tags(pools_list):
+            for pool in pools_list:
+                req_num = pool['request']
+                del pool['request']
+                requests[req_num].update(pool)
+            return requests
     return None
-
-pools = [
-    [1, 3, 1],
-    [2, 3, 1],
-    [1, 4, 2],
-    [2, 3, 2]
-]
-
-requests = [
-    [None, None, 1],
-    [None, None, 2]
-]
-
-print main(pools, requests)
