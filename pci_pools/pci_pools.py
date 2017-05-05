@@ -1,38 +1,29 @@
-# problem: we have pci devices grouped into pools, each pool has own set
-# of properties or tags. While requesting particular pci device we need
-# pick it according to pci request tags which have to be matched with
-# pci pools tags. After that we need to get pci device pools with unique
-# values for specified tags. Unique values mean no value should be same
-# for each tag.
+# problem: we have pci devices grouped into pools, each pool has own
+# set of properties or tags. While requesting the particular pci
+# device we need pick it according to pci request tags which have to
+# be matched with pci pools tags. After that we need to get pci device
+# pools with unique values for specified tags. Unique values mean no
+# value should be same for each tag.
 
 # input: list of pci device pools with tags, for simplicity pci device
-# pool is represented as array where elements are tag values.
-# output: list of tags should be added to each pci request to pick pci
-# devices with unique tags
+# pool and pci requests are represented as dict
+# output: updated pci requests with tags for picking particular pci devices
 
-# example:
-# we have the following pools:
-# p1 [1, 3, 1]
-# p2 [2, 3, 1]
-# p3 [1, 4, 2]
-# p4 [2, 3, 2]
-# we have two pci requests r1 where thid pool tag should be equal to 1
-# and r2 where thid pool tag should be equal to 2.
-# first and second tags for selected pci device have to be unique
-# as result updated pci request must be r1 [2, 3, 1], r2 [1, 4, 2]
+# example: see tests.py
 
 # idea:
 # - mark each pci device pool with request, if pool device satisfies
 # several requests several duplicate pools will be added
-# - go through all combinations of pci pools to find unique for each
-# request it takes P!/(R!*(P!-R!))
+# - go through all combinations of pci pools to find unique pool for each
+# request, in the worst case it takes P!/(R!*(P!-R!)), where P is
+# number of pools on compute node and R is number of pci requests
 # for 256 pools and 2 requests it takes 32640 steps (quick enough)
 # for 256 pools and 3 requests it takes 2763520 steps (quick enough)
 # for 4 simultanious requests it takes 174792640 steps (several tens
-# of seconds) which is not acceptable. Actual number of pools
+# of seconds) which is not acceptable. An actual number of pools
 # definitely should be much lower, and for example for 16 pci pools
 # it's quick enough for any numeber of requests
-
+# - last step in to update initial pci requests with appropriate tag values
 
 import itertools
 
