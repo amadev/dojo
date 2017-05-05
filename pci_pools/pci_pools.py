@@ -22,9 +22,20 @@
 # as result updated pci request must be r1 [2, 3, 1], r2 [1, 4, 2]
 
 # idea:
-# - mark each pci device pool with request
-# - filter non unique tags
-# - pick pci device pool for each request
+# - mark each pci device pool with request, if pool device satisfies
+# several requests several duplicate pools will be added
+# - go through all combinations of pci pools to find unique for each
+# request it takes P!/(R!*(P!-R!))
+# for 256 pools and 2 requests it takes 32640 steps (quick enough)
+# for 256 pools and 3 requests it takes 2763520 steps (quick enough)
+# for 4 simultanious requests it takes 174792640 steps (several tens
+# of seconds) which is not acceptable. Actual number of pools
+# definitely should be much lower, and for example for 16 pci pools
+# it's quick enough for any numeber of requests
+
+
+import itertools
+
 
 def match_pool(pool, request):
     for i, v in enumerate(pool):
@@ -35,30 +46,34 @@ def match_pool(pool, request):
     return True
 
 
-def filter_pools(lst):
-    s = [set() for i in range(len(lst[0][0]))]
-    def check_and_add(item):
-        print 'item', item, 's', s
-        for i in range(2):
+def check_unique_tags(lst):
+    n = len(lst[0])
+    s = [set() for i in range(n)]
+    for item in lst:
+        for i in range(n):
             if item[i] in s[i]:
                 return False
-        for i in range(2):
+        for i in range(n):
             s[i].add(item[i])
-        return True
+    return True
 
-    return [item for item in lst if check_and_add(item[0])]
+
+def filter_tags(p):
+    return p[0:2]
 
 
 def main(pools, requests):
     marked_pools = []
     for p in pools:
-        mp = [p]
-        for r in requests:
-            if match_pool(p, r):
-                mp.append(r)
-        marked_pools.append(mp)
-    filtered_pools = filter_pools(marked_pools)
-    return filtered_pools
+        for i in range(1, len(requests) + 1):
+            if match_pool(p, requests[i - 1]):
+                p = filter_tags(p)
+                p.append('r%s' % i)
+                marked_pools.append(p)
+    for p in itertools.combinations(marked_pools, len(requests)):
+        if check_unique_tags(p):
+            return p
+    return None
 
 pools = [
     [1, 3, 1],
