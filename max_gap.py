@@ -1,4 +1,5 @@
-# name: | Maximum Consecutive Gap
+# name: |
+#   Maximum Consecutive Gap
 #   Given an unsorted array, find the maximum difference between the
 #   successive elements in its sorted form.
 #   requirements: time - O(n), space - O(n)
@@ -48,6 +49,7 @@ class Solution:
 
 s = Solution()
 assert 3 == s.maximumGap([5, 3, 1, 8, 9, 2, 4])
+
 assert 1 == s.maximumGap([ 1, 1, 2 ])
 assert 0 == s.maximumGap([])
 assert 0 == s.maximumGap([1, 1, 1])
