@@ -45,5 +45,6 @@ def test_overlapped_requests():
     ]
     unique_tags = ['subnet']
     updated_requests = pick(pools, requests, unique_tags)
-    assert {'physnet': 'net_A', 'subnet': 'blue'} in updated_requests
-    assert {'vendor': 'abc', 'subnet': 'red'} in updated_requests
+    assert updated_requests[0]['physnet'] == 'net_A'
+    assert updated_requests[1]['vendor'] == 'abc'
+    assert updated_requests[0]['subnet'] != updated_requests[1]['subnet']
