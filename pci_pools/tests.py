@@ -12,8 +12,8 @@ def test_get_two_pci():
         {'physnet': 'net_B', 'switch': 'sw_A', 'pf': 'pf_4'},
         {'physnet': 'net_B', 'switch': 'sw_B', 'pf': 'pf_3'},
     ]
-    unique_tags = ['switch', 'pf']
-    updated_requests = pick(pools, requests, unique_tags)
+    distinct_tags = ['switch', 'pf']
+    updated_requests = pick(pools, requests, distinct_tags)
     assert {'physnet': 'net_A', 'switch': 'sw_B', 'pf': 'pf_3'} \
         in updated_requests
     assert {'physnet': 'net_B', 'switch': 'sw_A', 'pf': 'pf_4'} \
@@ -29,8 +29,8 @@ def test_fail_for_non_unique():
         {'physnet': 'net_A', 'switch': 'sw_A', 'pf': 'pf_3'},
         {'physnet': 'net_B', 'switch': 'sw_A', 'pf': 'pf_4'},
     ]
-    unique_tags = ['switch', 'pf']
-    assert pick(pools, requests, unique_tags) is None
+    distinct_tags = ['switch', 'pf']
+    assert pick(pools, requests, distinct_tags) is None
 
 
 def test_overlapped_requests():
@@ -43,8 +43,8 @@ def test_overlapped_requests():
         {'subnet': 'red', 'physnet': 'net_A', 'vendor': 'abc'},
         {'subnet': 'blue', 'vendor': 'abc'},
     ]
-    unique_tags = ['subnet']
-    updated_requests = pick(pools, requests, unique_tags)
+    distinct_tags = ['subnet']
+    updated_requests = pick(pools, requests, distinct_tags)
     assert updated_requests[0]['physnet'] == 'net_A'
     assert updated_requests[1]['vendor'] == 'abc'
     assert updated_requests[0]['subnet'] != updated_requests[1]['subnet']

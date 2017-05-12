@@ -35,7 +35,7 @@ def match_pool(pool, request):
     return True
 
 
-def check_unique_tags(lst):
+def check_distinct_tag_values(lst):
     s = {k: set() for k in lst[0]}
     for item in lst:
         for k in item:
@@ -46,20 +46,20 @@ def check_unique_tags(lst):
     return True
 
 
-def filter_tags(pool, unique_tags):
-    return {t: pool[t] for t in pool if t in unique_tags}
+def filter_tags(pool, distinct_tags):
+    return {t: pool[t] for t in pool if t in distinct_tags}
 
 
-def pick(pools, requests, unique_tags):
+def pick(pools, requests, distinct_tags):
     marked_pools = []
     for p in pools:
         for i in range(len(requests)):
             if match_pool(p, requests[i]):
-                p = filter_tags(p, unique_tags)
+                p = filter_tags(p, distinct_tags)
                 p['request'] = i
                 marked_pools.append(p)
     for pools_list in itertools.combinations(marked_pools, len(requests)):
-        if check_unique_tags(pools_list):
+        if check_distinct_tag_values(pools_list):
             for pool in pools_list:
                 req_num = pool['request']
                 del pool['request']
