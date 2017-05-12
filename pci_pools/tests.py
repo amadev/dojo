@@ -14,8 +14,10 @@ def test_get_two_pci():
     ]
     unique_tags = ['switch', 'pf']
     updated_requests = pick(pools, requests, unique_tags)
-    assert {'physnet': 'net_A', 'switch': 'sw_B', 'pf': 'pf_3'} in updated_requests
-    assert  {'physnet': 'net_B', 'switch': 'sw_A', 'pf': 'pf_4'} in updated_requests
+    assert {'physnet': 'net_A', 'switch': 'sw_B', 'pf': 'pf_3'} \
+        in updated_requests
+    assert {'physnet': 'net_B', 'switch': 'sw_A', 'pf': 'pf_4'} \
+        in updated_requests
 
 
 def test_fail_for_non_unique():
@@ -28,7 +30,7 @@ def test_fail_for_non_unique():
         {'physnet': 'net_B', 'switch': 'sw_A', 'pf': 'pf_4'},
     ]
     unique_tags = ['switch', 'pf']
-    assert None == pick(pools, requests, unique_tags)
+    assert pick(pools, requests, unique_tags) is None
 
 
 def test_overlapped_requests():
